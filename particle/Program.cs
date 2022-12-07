@@ -39,16 +39,17 @@ public interface IOutputHandler{
 
 
 public class Integrator{
-    public void integrate(IOutputHandler outputHandler){
+
+    public void integrate(IOutputHandler outputHandler, double finalTime, double timeStep){
 
     //const string outfilename = "out.txt";
     //StreamWriter outputHandler = new StreamWriter(outfilename);
     
         // tecnical simulation parameters (prolly gonna be replaced by user input if i feel like it)
-        const double finalTime = 1e3; // at what time the simulation should end
+        // const double finalTime = 1e3; // at what time the simulation should end
         double t = 0;
-        const double stepSize = 1e-3; // dt
-        int totalNumOfSteps = (int)((finalTime - t) / stepSize); // gonna be useful???? prolly not, the best way would be to use a buffer that fits the processor memory
+        // const double timeStep = 1e-3; // dt
+        int totalNumOfSteps = (int)((finalTime - t) / timeStep); // gonna be useful???? prolly not, the best way would be to use a buffer that fits the processor memory
         AssortedFunctions af = new AssortedFunctions();
 
         // simulation initial parameters
@@ -66,13 +67,13 @@ public class Integrator{
 
             //step forward using rk2/4
 
-            Vector2 newposition = af.RK2Step(stepSize, earth.Position, af.dxdt);
-            Vector2 newmomentum = af.RK2Step(stepSize, earth.Momentum, af.dpdt);
+            Vector2 newposition = af.RK2Step(timeStep, earth.Position, af.dxdt);
+            Vector2 newmomentum = af.RK2Step(timeStep, earth.Momentum, af.dpdt);
 
             earth.Position = newposition;
             earth.Momentum = newmomentum;
 
-            t += stepSize;
+            t += timeStep;
         }
 
         outputHandler.write();
