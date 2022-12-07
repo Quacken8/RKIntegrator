@@ -4,7 +4,10 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        Integrator integrator = new Integrator();
+        const double eccentricity = 0.3; // unitless eccentricity of an orbit
+        Vector2 initialPosition = new Vector2(1 - eccentricity, 0);
+        Vector2 initialMomentum = new Vector2(0, Math.Sqrt((1 + eccentricity) / (1 - eccentricity)));
+        Integrator integrator = new Integrator(initialPosition, initialMomentum);
         //integrator.integrate();
     }
 
@@ -39,6 +42,12 @@ public interface IOutputHandler{
 
 
 public class Integrator{
+    Vector2 initialPosition;
+    Vector2 initialMomentum;
+    public Integrator(Vector2 initialPosition, Vector2 initialMomentum){
+        this.initialPosition = initialPosition;
+        this.initialMomentum = initialMomentum;
+    }
 
     public void integrate(IOutputHandler outputHandler, double finalTime, double timeStep){
 
@@ -53,9 +62,7 @@ public class Integrator{
         AssortedFunctions af = new AssortedFunctions();
 
         // simulation initial parameters
-        const double eccentricity = 0.3; // unitless eccentricity of an orbit
-        Vector2 initialPosition = new Vector2(1 - eccentricity, 0);
-        Vector2 initialMomentum = new Vector2(0, Math.Sqrt((1 + eccentricity) / (1 - eccentricity)));
+
         Particle earth = new Particle(initialPosition, initialMomentum);
 
         while (t < finalTime){
@@ -136,9 +143,7 @@ public class AssortedFunctions{
     /// <param name="position">vector of position of said particle in units </param>
     /// <returns></returns>
     public double PotentialEnergy(Vector2 position){
-        double x = position.X;
-        double y = position.Y;
-        return -1.0 / Math.Sqrt(x * x + y * y);
+        return -1.0 / Math.Sqrt(position.Norm);
     }
 
     /// <summary>

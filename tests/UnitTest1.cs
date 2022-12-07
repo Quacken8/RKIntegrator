@@ -7,10 +7,12 @@ public class UnitTest1
     [TestMethod]
     public void TestMethod1()
     {
-
-        Integrator integrator = new Integrator();
+        const double eccentricity = 0.3; // unitless eccentricity of an orbit
+        Vector2 initialPosition = new Vector2(1 - eccentricity, 0);
+        Vector2 initialMomentum = new Vector2(0, Math.Sqrt((1 + eccentricity) / (1 - eccentricity)));
+        Integrator integrator = new Integrator(initialPosition, initialMomentum);
         MockupOutputHandler handler = new MockupOutputHandler();
-        integrator.integrate(handler, 1, 1e-1);
+        integrator.integrate(handler, 1, 1e-2);
     }
 }
 
@@ -33,9 +35,8 @@ public class MockupOutputHandler : IOutputHandler{
         times.Add(time);
     }
     public void write(){
-        foreach (double energy in energies){
-            Console.WriteLine(energy);
+        foreach (Vector2 position in positions){
+            Console.WriteLine(position);
         }
-
     }
 }
