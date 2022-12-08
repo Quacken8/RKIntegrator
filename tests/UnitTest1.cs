@@ -12,7 +12,7 @@ public class UnitTest1
         Vector2 initialMomentum = new Vector2(0, Math.Sqrt((1 + eccentricity) / (1 - eccentricity)));
         Integrator integrator = new Integrator(initialPosition, initialMomentum);
         MockupOutputHandler handler = new MockupOutputHandler();
-        integrator.integrate(handler, 1, 1e-2);
+        integrator.integrate(handler, 1, 1e-5);
     }
 }
 
@@ -35,8 +35,8 @@ public class MockupOutputHandler : IOutputHandler{
         times.Add(time);
     }
     public void write(){
-        foreach (Vector2 position in positions){
-            Console.WriteLine(position);
+        foreach (double energy in energies){
+            Console.WriteLine(energy);
         }
     }
 }

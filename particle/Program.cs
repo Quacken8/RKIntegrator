@@ -74,11 +74,8 @@ public class Integrator{
 
             //step forward using rk2/4
 
-            Vector2 newposition = af.RK2Step(timeStep, earth.Position, af.dxdt);
-            Vector2 newmomentum = af.RK2Step(timeStep, earth.Momentum, af.dpdt);
-
-            earth.Position = newposition;
-            earth.Momentum = newmomentum;
+            //earth.updateRK2(timeStep, af.dxdt, af.dpdt);
+            earth.updateEuler(timeStep, af.dxdt, af.dpdt);
 
             t += timeStep;
         }
@@ -124,6 +121,64 @@ public class Particle{
     public Vector2 Momentum { set; get; }
     public double Energy { get => af.TotalEnergy(Position, Momentum); }
     public double AngularMomentum { get => af.AngularMomentum(Position, Momentum); }
+
+    /// <summary>
+    /// Calculates the next, (n+1)th value of integrated function func using runge kutta method of order 2 for func that's independent of time
+    /// </summary>
+    /// <param name="stepSize">desired time step</param>
+    /// <param name="lastResult">nth value</param>
+    /// <param name="func">function that we're trying to integrate</param>
+    /// <returns></returns>
+    public void updateRK2(double stepSize, Func<Vector2, Vector2> dxdt, Func<Vector2, Vector2> dpdt){
+
+        Vector2 lastMomentum = this.Momentum;
+        Vector2 k1 = dxdt(lastMomentum);
+        Vector2 k2 = dxdt(lastMomentum + k1);
+
+        this.Position = this.Position + stepSize * 0.5 * (k1 + k2);
+
+        Vector2 lastPosition = this.Position;
+        Vector2 l1 = dpdt(lastPosition);
+        Vector2 l2 = dpdt(lastPosition + l1);
+
+        this.Momentum = this.Momentum + stepSize * 0.5 * (l1 + l2);
+    }
+
+    /// <summary>
+    /// Steps forward using runge kutta method of order 2 for a function func that's independent of time
+    /// </summary>
+    /// <param name="stepSize">desired time step</param>
+    /// <param name="lastResult">nth value</param>
+    /// <param name="func">function that we're trying to integrate</param>
+    /// <returns></returns>
+    public void updateRK4(double stepSize, Func<Vector2, Vector2> dxdt, Func<Vector2, Vector2> dpdt){
+
+        Vector2 lastMomentum = this.Momentum;
+        Vector2 k1 = dxdt(lastMomentum);
+        Vector2 k2 = dxdt(lastMomentum + 0.5 * k1);
+        Vector2 k3 = dxdt(lastMomentum + 0.5 * k2);
+        Vector2 k4 = dxdt(lastMomentum + k3);
+
+        this.Position = this.Position + stepSize / 6 * (k1 + 2 * k2 + 2 * k3 + k4);
+
+
+        Vector2 lastPosition = this.Position;
+        Vector2 l1 = dpdt(lastPosition);
+        Vector2 l2 = dpdt(lastPosition + 0.5 * l1);
+        Vector2 l3 = dpdt(lastPosition + 0.5 * l2);
+        Vector2 l4 = dpdt(lastPosition + l3);
+
+        this.Momentum = this.Momentum + stepSize / 6 * (l1 + 2 * l2 + 2 * l3 + l4);
+    }
+
+    public void updateEuler(double stepSize, Func<Vector2, Vector2> dxdt, Func<Vector2, Vector2> dpdt){
+
+        Vector2 lastMomentum = this.Momentum;
+        this.Position = this.Position + stepSize*dxdt(lastMomentum);
+
+        Vector2 lastPosition = this.Position;
+        this.Momentum = this.Momentum + stepSize*dpdt(lastPosition);
+    }
 }
 
 
@@ -143,7 +198,9 @@ public class AssortedFunctions{
     /// <param name="position">vector of position of said particle in units </param>
     /// <returns></returns>
     public double PotentialEnergy(Vector2 position){
-        return -1.0 / Math.Sqrt(position.Norm);
+        double x = position.X;
+        double y = position.Y;
+        return -1.0 / Math.Sqrt(x * x + y * y);
     }
 
     /// <summary>
@@ -179,35 +236,4 @@ public class AssortedFunctions{
         double py = momentum.Y;
         return x * py - y * px;
     }
-            /// <summary>
-        /// Calculates the next, (n+1)th value of integrated function func using runge kutta method of order 2 for func that's independent of time
-        /// </summary>
-        /// <param name="stepSize">desired time step</param>
-        /// <param name="lastResult">nth value</param>
-        /// <param name="func">function that we're trying to integrate</param>
-        /// <returns></returns>
-        public Vector2 RK2Step(double stepSize, Vector2 lastResult, Func<Vector2, Vector2> func)
-        {
-
-            Vector2 k1 = func(lastResult);
-            Vector2 k2 = func(lastResult + k1);
-            return lastResult + stepSize * 0.5 * (k1 + k2);
-        }
-
-        /// <summary>
-        /// Steps forward using runge kutta method of order 2 for a function func that's independent of time
-        /// </summary>
-        /// <param name="stepSize">desired time step</param>
-        /// <param name="lastResult">nth value</param>
-        /// <param name="func">function that we're trying to integrate</param>
-        /// <returns></returns>
-        public Vector2 RK4Step(double stepSize, Vector2 lastResult, Func<Vector2, Vector2> func)
-        {
-
-            Vector2 k1 = func(lastResult);
-            Vector2 k2 = func(lastResult + 0.5 * k1);
-            Vector2 k3 = func(lastResult + 0.5 * k2);
-            Vector2 k4 = func(lastResult + k3);
-            return lastResult + stepSize / 6 * (k1 + 2 * k2 + 2 * k3 + k4);
-        }
 }
