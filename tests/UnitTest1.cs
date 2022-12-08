@@ -29,8 +29,8 @@ public class UnitTest1
         string outputFile = "output.txt";
         FileWriter handler = new FileWriter(outputFile);
 
-        double timestep = 5e-2;
-        double finaltime = 1;
+        double timestep = 1e-5;
+        double finaltime = 10;
         integrator.integrate(handler, finaltime, timestep);
     }
 }

@@ -100,7 +100,7 @@ public struct Vector2{
     public static Vector2 operator *(int c, Vector2 v) => new Vector2(v.X * c, v.Y * c);
     public static Vector2 operator +(Vector2 v, Vector2 w) => new Vector2(v.X + w.X, v.Y + w.Y);
     public override string ToString(){
-        return $"{X}, {Y}"; // TBD this might be super slow ew
+        return $"{X}\t{Y}"; // TBD this might be super slow ew
     }
 }
 
@@ -185,7 +185,7 @@ public class Particle{
 public class AssortedFunctions{
     public Vector2 dpdt(Vector2 position){
         double pe = PotentialEnergy(position);
-        return -pe*pe*pe*position;
+        return +pe*pe*pe*position;
     }
 
     public Vector2 dxdt(Vector2 momentum){
@@ -236,9 +236,9 @@ public class AssortedFunctions{
 
 public class FileWriter : IOutputHandler {
 
-    StreamWriter sw;
+    string outputFilename;
     public FileWriter(string outputFilename){
-        sw = new StreamWriter(outputFilename);
+        this.outputFilename = outputFilename;
     }
     Queue<double> energies = new Queue<double>();
     Queue<double> angularMomenta = new Queue<double>();
@@ -259,14 +259,13 @@ public class FileWriter : IOutputHandler {
     }
 
     public void write(){
-        string toWrite = "time\tenergy\tangMomentum\tposition";
-        sw.Write(toWrite);
-        while(times.Count>0){
-            sw.Write('\n');
-
-            toWrite = times.Dequeue() + "\t" + energies.Dequeue() + "\t" + angularMomenta.Dequeue() + "\t" + positions.Dequeue().ToString();
-            
-            sw.Write(toWrite);
+        using (StreamWriter sw = new StreamWriter(outputFilename)){
+            string toWrite = "time\tenergy\tangMomentum\tpositionX\tpositionY";
+            sw.WriteLine(toWrite);
+            while(times.Count>0){
+                toWrite = times.Dequeue() + "\t" + energies.Dequeue() + "\t" + angularMomenta.Dequeue() + "\t" + positions.Dequeue().ToString();
+                sw.WriteLine(toWrite);
+            }
         }
     }
 
