@@ -75,7 +75,7 @@ public class Integrator{
             //step forward using rk2/4
 
             //earth.updateRK2(timeStep, af.dxdt, af.dpdt);
-            earth.updateEuler(timeStep, af.dxdt, af.dpdt);
+            //earth.updateEuler(timeStep, af.dxdt, af.dpdt);
 
             t += timeStep;
         }
