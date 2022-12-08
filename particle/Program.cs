@@ -198,9 +198,7 @@ public class AssortedFunctions{
     /// <param name="position">vector of position of said particle in units </param>
     /// <returns></returns>
     public double PotentialEnergy(Vector2 position){
-        double x = position.X;
-        double y = position.Y;
-        return -1.0 / Math.Sqrt(x * x + y * y);
+        return -1.0 / Math.Sqrt(position.Norm);
     }
 
     /// <summary>
@@ -209,9 +207,7 @@ public class AssortedFunctions{
     /// <param name="momentum">vector of momentum of said particle in units</param>
     /// <returns></returns>
     public double KineticEnergy(Vector2 momentum){
-        double px = momentum.X;
-        double py = momentum.Y;
-        return 0.5*(px*px+py*py);
+        return 0.5*momentum.Norm;
     }
     /// <summary>
     /// returns total energy of a particle 
@@ -236,4 +232,42 @@ public class AssortedFunctions{
         double py = momentum.Y;
         return x * py - y * px;
     }
+}
+
+public class FileWriter : IOutputHandler {
+
+    StreamWriter sw;
+    public FileWriter(string outputFilename){
+        sw = new StreamWriter(outputFilename);
+    }
+    Queue<double> energies = new Queue<double>();
+    Queue<double> angularMomenta = new Queue<double>();
+    Queue<double> times = new Queue<double>();
+    Queue<Vector2> positions = new Queue<Vector2>();
+
+    public void addTimeDatapoint(double time){
+        times.Enqueue(time);
+    }
+    public void addEnergyDatapoint(double energy){
+        energies.Enqueue(energy);
+    }
+    public void addAngularMomentumDatapoint(double angularMomentum){
+        angularMomenta.Enqueue(angularMomentum);
+    }
+    public void addPositionDatapoint(Vector2 position){
+        positions.Enqueue(position);
+    }
+
+    public void write(){
+        string toWrite = "time\tenergy\tangMomentum\tposition";
+        sw.Write(toWrite);
+        while(times.Count>0){
+            sw.Write('\n');
+
+            toWrite = times.Dequeue() + "\t" + energies.Dequeue() + "\t" + angularMomenta.Dequeue() + "\t" + positions.Dequeue().ToString();
+            
+            sw.Write(toWrite);
+        }
+    }
+
 }

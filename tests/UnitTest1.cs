@@ -5,14 +5,33 @@ public class UnitTest1
 {
 
     [TestMethod]
-    public void TestMethod1()
+    public void TestMethodTOConsole()
     {
         const double eccentricity = 0.3; // unitless eccentricity of an orbit
         Vector2 initialPosition = new Vector2(1 - eccentricity, 0);
         Vector2 initialMomentum = new Vector2(0, Math.Sqrt((1 + eccentricity) / (1 - eccentricity)));
         Integrator integrator = new Integrator(initialPosition, initialMomentum);
         MockupOutputHandler handler = new MockupOutputHandler();
-        integrator.integrate(handler, 1, 1e-5);
+
+        double timestep = 5e-2;
+        double finaltime = 1;
+        integrator.integrate(handler, finaltime, timestep);
+    }
+
+    [TestMethod]
+    public void TestMethodTOFile()
+    {
+        const double eccentricity = 0.3; // unitless eccentricity of an orbit
+        Vector2 initialPosition = new Vector2(1 - eccentricity, 0);
+        Vector2 initialMomentum = new Vector2(0, Math.Sqrt((1 + eccentricity) / (1 - eccentricity)));
+        Integrator integrator = new Integrator(initialPosition, initialMomentum);
+
+        string outputFile = "output.txt";
+        FileWriter handler = new FileWriter(outputFile);
+
+        double timestep = 5e-2;
+        double finaltime = 1;
+        integrator.integrate(handler, finaltime, timestep);
     }
 }
 
