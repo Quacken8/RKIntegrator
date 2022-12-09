@@ -49,16 +49,13 @@ public class Integrator{
         this.initialMomentum = initialMomentum;
     }
 
-    public void integrate(IOutputHandler outputHandler, double finalTime, double timeStep){
+    public void integrate(IOutputHandler outputHandler, double finalTime, double timeStep, string method = "RK2"){
 
-    //const string outfilename = "out.txt";
-    //StreamWriter outputHandler = new StreamWriter(outfilename);
-    
-        // tecnical simulation parameters (prolly gonna be replaced by user input if i feel like it)
-        // const double finalTime = 1e3; // at what time the simulation should end
         double t = 0;
         // const double timeStep = 1e-3; // dt
-        int totalNumOfSteps = (int)((finalTime - t) / timeStep); // gonna be useful???? prolly not, the best way would be to use a buffer that fits the processor memory
+        int totalNumOfSteps = (int)((finalTime - t) / timeStep) + 1; // could be later added into the output handler so it can create the correct sized array for results without having to constantly update List<> lengths; TBD tho, first need to actually find the slow places of this program and it probably won't matter in the end
+        // also for a long enough simulation the double result of that division will lose accuracy so this number isnt rly good anyway; should do a bit of bit magic to it first
+
         AssortedFunctions af = new AssortedFunctions();
 
         // simulation initial parameters
@@ -72,10 +69,20 @@ public class Integrator{
             outputHandler.addAngularMomentumDatapoint(earth.AngularMomentum);
             outputHandler.addPositionDatapoint(earth.Position);
 
-            //step forward using rk2/4
-
-            //earth.updateRK2(timeStep, af.dxdt, af.dpdt);
-            //earth.updateEuler(timeStep, af.dxdt, af.dpdt);
+            //step forward
+            switch(method.ToUpper()){
+                case ("RK2"): 
+                    earth.updateRK2(timeStep, af.dxdt, af.dpdt);
+                    break;
+                case ("RK4"):
+                    earth.updateRK4(timeStep, af.dxdt, af.dpdt);
+                    break;
+                case ("EULER"):
+                    earth.updateEuler(timeStep, af.dxdt, af.dpdt);
+                    break;
+                default:
+                    throw new ArgumentException("Method " + method + " not found! Only acceptable methods are 'RK2', 'RK4' and 'Euler'.");
+            }
 
             t += timeStep;
         }
