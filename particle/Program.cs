@@ -1,5 +1,6 @@
 ﻿using System.Text;
 [assembly:System.Runtime.CompilerServices.InternalsVisibleTo("particle_tests")]
+
 internal class Program
 {
     private static void Main(string[] args)
@@ -21,23 +22,6 @@ public interface IOutputHandler{
     public void addAngularMomentumDatapoint(double angularMomentum);
     public void addTimeDatapoint(double t);
     public void write();
-
-    // I/O stuffs
-    //const string outfilename = "out.txt";    
-    //const char delimiter = '\t';
-    //const char linebreak = '\n';
-    //StringBuilder stringbuilder = new StringBuilder();
-
-    //stringbuilder.Append(t);
-    //stringbuilder.Append(delimiter);
-    ////evaluate angular momentum and energy, save it
-    //stringbuilder.Append(earth.Energy);
-    //stringbuilder.Append(delimiter);
-    //stringbuilder.Append(earth.AngularMomentum);
-    //stringbuilder.Append(delimiter);
-    ////save position
-    //stringbuilder.Append(earth.Position);
-    //stringbuilder.Append(linebreak);
 }
 
 
@@ -49,16 +33,22 @@ public class Integrator{
         this.initialMomentum = initialMomentum;
     }
 
+    /// <summary>
+    /// simulate the whole movement
+    /// </summary>
+    /// <param name="outputHandler">class that can remember energies, angular momenta, times and positions of the particle at each step</param>
+    /// <param name="finalTime">desired final time of the simulation</param>
+    /// <param name="timeStep">timestep of the simulation</param>
+    /// <param name="method">method with which to integrate. Viable options are "euler", "RK2" and "RK4" (not case sensitive)</param>
+    /// <exception cref="ArgumentException">thrown if you dont choose viable method for integration</exception>
     public void integrate(IOutputHandler outputHandler, double finalTime, double timeStep, string method = "RK2"){
+
+        AssortedFunctions af = new AssortedFunctions();
 
         double t = 0;
         // const double timeStep = 1e-3; // dt
         int totalNumOfSteps = (int)((finalTime - t) / timeStep) + 1; // could be later added into the output handler so it can create the correct sized array for results without having to constantly update List<> lengths; TBD tho, first need to actually find the slow places of this program and it probably won't matter in the end
         // also for a long enough simulation the double result of that division will lose accuracy so this number isnt rly good anyway; should do a bit of bit magic to it first
-
-        AssortedFunctions af = new AssortedFunctions();
-
-        // simulation initial parameters
 
         Particle earth = new Particle(initialPosition, initialMomentum);
 
@@ -69,7 +59,7 @@ public class Integrator{
             outputHandler.addAngularMomentumDatapoint(earth.AngularMomentum);
             outputHandler.addPositionDatapoint(earth.Position);
 
-            //step forward
+            //step forward using chosen method
             switch(method.ToUpper()){
                 case ("RK2"): 
                     earth.updateRK2(timeStep, af.dxdt, af.dpdt);
@@ -81,14 +71,13 @@ public class Integrator{
                     earth.updateEuler(timeStep, af.dxdt, af.dpdt);
                     break;
                 default:
-                    throw new ArgumentException("Method " + method + " not found! Only acceptable methods are 'RK2', 'RK4' and 'Euler'.");
+                    throw new ArgumentException($"Method {method} not found! Only acceptable methods are 'RK2', 'RK4' and 'Euler'.");
             }
 
             t += timeStep;
         }
 
         outputHandler.write();
-
     }
 }
 
@@ -112,14 +101,13 @@ public struct Vector2{
 }
 
 public class Particle{
+    AssortedFunctions af = new AssortedFunctions();
 
     /// <summary>
     /// sets up the particle with initial position and momentum
     /// </summary>
     /// <param name="initialPos">Position at t = 0</param>
     /// <param name="initialMom">momentum at t = 0</param>
-
-    AssortedFunctions af = new AssortedFunctions();
     public Particle(Vector2 initialPos, Vector2 initialMom){
         Position = initialPos;
         Momentum = initialMom;
@@ -178,8 +166,13 @@ public class Particle{
         this.Momentum = this.Momentum + stepSize / 6 * (l1 + 2 * l2 + 2 * l3 + l4);
     }
 
+    /// <summary>
+    /// step forward using euler method of first order
+    /// </summary>
+    /// <param name="stepSize">dt</param>
+    /// <param name="dxdt">function to update position</param>
+    /// <param name="dpdt">function to update momentum</param>
     public void updateEuler(double stepSize, Func<Vector2, Vector2> dxdt, Func<Vector2, Vector2> dpdt){
-
         Vector2 lastMomentum = this.Momentum;
         this.Position = this.Position + stepSize*dxdt(lastMomentum);
 
@@ -241,8 +234,10 @@ public class AssortedFunctions{
     }
 }
 
+/// <summary>
+/// Output handler class that writes the results to a file (which is given to it in the constructor) row by row separated by '\t's
+/// </summary>
 public class FileWriter : IOutputHandler {
-
     string outputFilename;
     public FileWriter(string outputFilename){
         this.outputFilename = outputFilename;
@@ -267,9 +262,10 @@ public class FileWriter : IOutputHandler {
 
     public void write(){
         using (StreamWriter sw = new StreamWriter(outputFilename)){
-            string toWrite = "time\tenergy\tangMomentum\tpositionX\tpositionY";
+            string toWrite = "time\tenergy\tangMomentum\tpositionX\tpositionY"; // header of the file; unitless (ew)
             sw.WriteLine(toWrite);
             while(times.Count>0){
+                // this string concat is eww; worth using stringbuilder??
                 toWrite = times.Dequeue() + "\t" + energies.Dequeue() + "\t" + angularMomenta.Dequeue() + "\t" + positions.Dequeue().ToString();
                 sw.WriteLine(toWrite);
             }
