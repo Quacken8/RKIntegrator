@@ -35,6 +35,55 @@ public class UnitTest1
     }
 }
 
+/// <summary>
+/// this output handler's duty is to test the order of used method; it will only record position of the planet after exactly one period. 
+/// </summary>
+public class OutputHandlerForMethodOrderTesting : IOutputHandler {
+
+    string outputFilename;
+    public OutputHandlerForMethodOrderTesting(string outputFilename){
+        this.outputFilename = outputFilename;
+    }
+
+    public int order{ set; get; }
+    public Queue<Vector2> positions = new Queue<Vector2>();
+    public Queue<double> stepSizes = new Queue<double>();
+
+    public void addStepsizeDatapoint(double stepSize){
+        stepSizes.Enqueue(stepSize);
+    }
+    public void addPositionDatapoint(Vector2 position){
+        positions.Enqueue(position);
+    }
+
+    /// <summary>
+    /// it is expected youll call this after multiple runs with different dts
+    /// </summary>
+    /// <exception cref="Exception"></exception>
+    public void write()
+    {
+        if (positions.Count != stepSizes.Count){
+            throw new Exception("You have a diferent number of dts and positions recorded");
+        }
+
+        using (StreamWriter sw = new StreamWriter(outputFilename))
+        {
+            string toWrite = $"order {order}\ndt\tpositionX\tpositionY"; // header of the file; unitless (ew)
+            sw.WriteLine(toWrite);
+            while (stepSizes.Count > 0)
+            {
+                toWrite = stepSizes.Dequeue() + "\t" + positions.Dequeue().ToString();
+                sw.WriteLine(toWrite);
+            }
+        }
+    }
+
+    public void addAngularMomentumDatapoint(double andgularMomentum){}//not used lol
+    public void addEnergyDatapoint(double energy) { }// not used lol
+    public void addTimeDatapoint(double time) { }// not used lol
+
+}
+
 public class MockupOutputHandler : IOutputHandler{
     
     public List<Vector2> positions = new List<Vector2>();
