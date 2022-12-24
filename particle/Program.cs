@@ -271,5 +271,4 @@ public class FileWriter : IOutputHandler {
             }
         }
     }
-
 }

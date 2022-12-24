@@ -33,19 +33,42 @@ public class UnitTest1
         double finaltime = 10;
         integrator.integrate(handler, finaltime, timestep);
     }
+
+    [TestMethod]
+    public void TestMethodOrderRelationRK2(){
+
+        const double eccentricity = 0.3; // unitless eccentricity of an orbit
+        Vector2 initialPosition = new Vector2(1 - eccentricity, 0);
+        Vector2 initialMomentum = new Vector2(0, Math.Sqrt((1 + eccentricity) / (1 - eccentricity)));
+        const double wholePeriodAndABit = 1.3;
+
+        OutputHandlerForMethodOrderTesting handler = new OutputHandlerForMethodOrderTesting("ordersOutput.txt");
+
+        double[] stepSizes = { 1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6 };
+
+        foreach (double stepSize in stepSizes){
+            handler.addStepsizeDatapoint(stepSize);
+            Integrator integrator = new Integrator(initialPosition, initialMomentum);
+
+            integrator.integrate(handler, wholePeriodAndABit, stepSize, "RK2");
+        }
+
+        handler.write();
+    }
 }
 
 /// <summary>
-/// this output handler's duty is to test the order of used method; it will only record position of the planet after exactly one period. 
+/// this output handler's duty is to test the order of used method; it will only record position of the planet after exactly one period. It is expected you wont use this if your simulation takes longer than one period
 /// </summary>
 public class OutputHandlerForMethodOrderTesting : IOutputHandler {
-
     string outputFilename;
     public OutputHandlerForMethodOrderTesting(string outputFilename){
         this.outputFilename = outputFilename;
     }
 
     public int order{ set; get; }
+    public double period { set; get; }
+    bool afterAPeriod = false;
     public Queue<Vector2> positions = new Queue<Vector2>();
     public Queue<double> stepSizes = new Queue<double>();
 
@@ -53,25 +76,30 @@ public class OutputHandlerForMethodOrderTesting : IOutputHandler {
         stepSizes.Enqueue(stepSize);
     }
     public void addPositionDatapoint(Vector2 position){
-        positions.Enqueue(position);
+        if (afterAPeriod){
+            positions.Enqueue(position);
+            afterAPeriod = false;
+        }
+    }
+    public void addTimeDatapoint(double time){
+        if (time > period){
+            afterAPeriod = true;
+        }
     }
 
     /// <summary>
     /// it is expected youll call this after multiple runs with different dts
     /// </summary>
     /// <exception cref="Exception"></exception>
-    public void write()
-    {
+    public void write(){
         if (positions.Count != stepSizes.Count){
             throw new Exception("You have a diferent number of dts and positions recorded");
         }
 
-        using (StreamWriter sw = new StreamWriter(outputFilename))
-        {
+        using (StreamWriter sw = new StreamWriter(outputFilename)){
             string toWrite = $"order {order}\ndt\tpositionX\tpositionY"; // header of the file; unitless (ew)
             sw.WriteLine(toWrite);
-            while (stepSizes.Count > 0)
-            {
+            while (stepSizes.Count > 0){
                 toWrite = stepSizes.Dequeue() + "\t" + positions.Dequeue().ToString();
                 sw.WriteLine(toWrite);
             }
@@ -79,9 +107,7 @@ public class OutputHandlerForMethodOrderTesting : IOutputHandler {
     }
 
     public void addAngularMomentumDatapoint(double andgularMomentum){}//not used lol
-    public void addEnergyDatapoint(double energy) { }// not used lol
-    public void addTimeDatapoint(double time) { }// not used lol
-
+    public void addEnergyDatapoint(double energy){}// not used lol
 }
 
 public class MockupOutputHandler : IOutputHandler{
