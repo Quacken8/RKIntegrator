@@ -1,8 +1,11 @@
 namespace particle_tests;
 
+
 [TestClass]
 public class UnitTest1
 {
+
+    double wholePeriod = 8.0 * Math.Atan(1.0);
 
     [TestMethod]
     public void TestMethodTOConsole()
@@ -40,17 +43,26 @@ public class UnitTest1
         const double eccentricity = 0.3; // unitless eccentricity of an orbit
         Vector2 initialPosition = new Vector2(1 - eccentricity, 0);
         Vector2 initialMomentum = new Vector2(0, Math.Sqrt((1 + eccentricity) / (1 - eccentricity)));
-        const double wholePeriodAndABit = 1.3;
 
-        OutputHandlerForMethodOrderTesting handler = new OutputHandlerForMethodOrderTesting("ordersOutput.txt");
+        string filename = "ordersOutputRK2.txt";
+        OutputHandlerForMethodOrderTesting handler = new OutputHandlerForMethodOrderTesting(filename);
+        handler.period = wholePeriod;
 
-        double[] stepSizes = { 1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6 };
+        // create an array of smaller and smaller timesteps that still end up at exactly one period
+        const int numberOfDatapoints = 10;
+        double[] stepSizes = new double[numberOfDatapoints];
+        for (int i = 0; i < numberOfDatapoints; i++){
+            stepSizes[i] = wholePeriod / Math.Pow(2, i+2);
+        }
+        Console.WriteLine("vscode is dumb and wont tell u but im running brm brm");
 
         foreach (double stepSize in stepSizes){
             handler.addStepsizeDatapoint(stepSize);
             Integrator integrator = new Integrator(initialPosition, initialMomentum);
 
-            integrator.integrate(handler, wholePeriodAndABit, stepSize, "RK2");
+            double wholePeriodAndABit = wholePeriod + 1.5 * stepSize; // should make sure theres plenty of space to hit period + stepsize + epsilon so the handlers write condition hit, but also not too long to write down data from whole period + stepsize
+
+            integrator.integrate(handler, wholePeriodAndABit, stepSize, method: "RK2", write: false);
         }
 
         handler.write();
@@ -75,11 +87,14 @@ public class OutputHandlerForMethodOrderTesting : IOutputHandler {
     public void addStepsizeDatapoint(double stepSize){
         stepSizes.Enqueue(stepSize);
     }
+
+    Vector2 lastPosition;
     public void addPositionDatapoint(Vector2 position){
-        if (afterAPeriod){
-            positions.Enqueue(position);
+        if (afterAPeriod && positions.Count < stepSizes.Count){
+            positions.Enqueue(lastPosition);
             afterAPeriod = false;
         }
+        lastPosition = position;
     }
     public void addTimeDatapoint(double time){
         if (time > period){

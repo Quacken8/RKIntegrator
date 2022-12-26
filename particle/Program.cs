@@ -41,7 +41,7 @@ public class Integrator{
     /// <param name="timeStep">timestep of the simulation</param>
     /// <param name="method">method with which to integrate. Viable options are "euler", "RK2" and "RK4" (not case sensitive)</param>
     /// <exception cref="ArgumentException">thrown if you dont choose viable method for integration</exception>
-    public void integrate(IOutputHandler outputHandler, double finalTime, double timeStep, string method = "RK2"){
+    public void integrate(IOutputHandler outputHandler, double finalTime, double timeStep, string method = "RK2", bool write = true){
 
         AssortedFunctions af = new AssortedFunctions();
 
@@ -77,7 +77,9 @@ public class Integrator{
             t += timeStep;
         }
 
-        outputHandler.write();
+        if (write){
+            outputHandler.write();
+        }
     }
 }
 
