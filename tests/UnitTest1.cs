@@ -32,9 +32,9 @@ public class UnitTest1
         string outputFile = "output.txt";
         FileWriter handler = new FileWriter(outputFile);
 
-        double timestep = 1e-5;
-        double finaltime = 10;
-        integrator.integrate(handler, finaltime, timestep);
+        double timestep = 1e-7;
+        double finaltime = wholePeriod;
+        integrator.integrate(handler, finaltime, timestep, method: "Euler");
     }
 
     [TestMethod]
@@ -45,11 +45,11 @@ public class UnitTest1
         Vector2 initialMomentum = new Vector2(0, Math.Sqrt((1 + eccentricity) / (1 - eccentricity)));
 
         string filename = "ordersOutputRK2.txt";
-        OutputHandlerForMethodOrderTesting handler = new OutputHandlerForMethodOrderTesting(filename);
+        OutputHandlerForMethodOrderTesting handler = new OutputHandlerForMethodOrderTesting(filename); // saves the final positions of the planet
         handler.period = wholePeriod;
 
         // create an array of smaller and smaller timesteps that still end up at exactly one period
-        const int numberOfDatapoints = 10;
+        const int numberOfDatapoints = 1000;
         double[] stepSizes = new double[numberOfDatapoints];
         for (int i = 0; i < numberOfDatapoints; i++){
             stepSizes[i] = wholePeriod / Math.Pow(2, i+2);

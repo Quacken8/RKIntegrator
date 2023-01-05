@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "QN1J+IgZCqAJKhiNS5Xe3Pzw1hKCe7OOjK//IS+iRz769Wju1r+w5YmFx/CUHChT7r/QZnoFP1VuTCCQIw2lww==",
+  "dgSpecHash": "43PShj2zgtxXMGHP8Yl40jVcNkFm52Sv2zg0CPUMCzYOdLc7MnkTgf3egPt/vt5hZfOPjNVZCJExwXK3g9OxAw==",
   "success": true,
-  "projectFilePath": "/home/ondra/Documents/Vejška/zapoctakNumMet/particle/particle.csproj",
+  "projectFilePath": "/home/ondra/Documents/Vejška/NumMetody/zapoctakNumMet/particle/particle.csproj",
   "expectedPackageFiles": [],
   "logs": []
 }

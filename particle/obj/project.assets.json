@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/ondra/Documents/Vejška/zapoctakNumMet/particle/particle.csproj",
+      "projectUniqueName": "/home/ondra/Documents/Vejška/NumMetody/zapoctakNumMet/particle/particle.csproj",
       "projectName": "particle",
-      "projectPath": "/home/ondra/Documents/Vejška/zapoctakNumMet/particle/particle.csproj",
+      "projectPath": "/home/ondra/Documents/Vejška/NumMetody/zapoctakNumMet/particle/particle.csproj",
       "packagesPath": "/home/ondra/.nuget/packages/",
-      "outputPath": "/home/ondra/Documents/Vejška/zapoctakNumMet/particle/obj/",
+      "outputPath": "/home/ondra/Documents/Vejška/NumMetody/zapoctakNumMet/particle/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/ondra/.nuget/NuGet/NuGet.Config"
