@@ -32,9 +32,9 @@ public class UnitTest1
         string outputFile = "output.txt";
         FileWriter handler = new FileWriter(outputFile);
 
-        double timestep = 1e-7;
+        double timestep = 1e-5;
         double finaltime = wholePeriod;
-        integrator.integrate(handler, finaltime, timestep, method: "Euler");
+        integrator.integrate(handler, finaltime, timestep, method: "rk2");
     }
 
     [TestMethod]

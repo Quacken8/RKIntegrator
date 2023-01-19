@@ -184,7 +184,7 @@ public class Integrator{
     }
 }
 
-public struct Vector2{
+public class Vector2{
     public Vector2(double x, double y){
         X = x;
         Y = y;
@@ -231,19 +231,18 @@ public class Particle{
 
         Vector2 lastMomentum = this.Momentum;
         Vector2 k1 = dxdt(lastMomentum);
-        Vector2 k2 = dxdt(lastMomentum + k1);
+        Vector2 k2 = dxdt(lastMomentum + stepSize * k1);
 
         this.Position = this.Position + stepSize * 0.5 * (k1 + k2);
 
         Vector2 lastPosition = this.Position;
         Vector2 l1 = dpdt(lastPosition);
-        Vector2 l2 = dpdt(lastPosition + l1);
-
+        Vector2 l2 = dpdt(lastPosition + stepSize * l1);
         this.Momentum = this.Momentum + stepSize * 0.5 * (l1 + l2);
     }
 
     /// <summary>
-    /// Steps forward using runge kutta method of order 2 for a function func that's independent of time
+    /// Steps forward using runge kutta method of order 4 for a function func that's independent of time
     /// </summary>
     /// <param name="stepSize">desired time step</param>
     /// <param name="lastResult">nth value</param>
@@ -253,18 +252,18 @@ public class Particle{
 
         Vector2 lastMomentum = this.Momentum;
         Vector2 k1 = dxdt(lastMomentum);
-        Vector2 k2 = dxdt(lastMomentum + 0.5 * k1);
-        Vector2 k3 = dxdt(lastMomentum + 0.5 * k2);
-        Vector2 k4 = dxdt(lastMomentum + k3);
+        Vector2 k2 = dxdt(lastMomentum + 0.5 * stepSize * k1);
+        Vector2 k3 = dxdt(lastMomentum + 0.5 * stepSize * k2);
+        Vector2 k4 = dxdt(lastMomentum + stepSize * k3);
 
         this.Position = this.Position + stepSize / 6 * (k1 + 2 * k2 + 2 * k3 + k4);
 
 
         Vector2 lastPosition = this.Position;
         Vector2 l1 = dpdt(lastPosition);
-        Vector2 l2 = dpdt(lastPosition + 0.5 * l1);
-        Vector2 l3 = dpdt(lastPosition + 0.5 * l2);
-        Vector2 l4 = dpdt(lastPosition + l3);
+        Vector2 l2 = dpdt(lastPosition + 0.5 * stepSize * l1);
+        Vector2 l3 = dpdt(lastPosition + 0.5 * stepSize * l2);
+        Vector2 l4 = dpdt(lastPosition + stepSize * l3);
 
         this.Momentum = this.Momentum + stepSize / 6 * (l1 + 2 * l2 + 2 * l3 + l4);
     }
