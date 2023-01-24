@@ -1,45 +1,69 @@
-﻿using System.Text;
+﻿using System.Text; // for string builder version... I got a bit carried away. It wasn't used in the end, but could be to nae this like 3 % faster
 [assembly:System.Runtime.CompilerServices.InternalsVisibleTo("particle_tests")]
 
 internal class Program
 {
+    /// <summary>
+    /// This main in particular is only useful for one special case: testing the order of the methods. Everything else was handled from the unit test 1. Yes, I *could* make this general purpose... I could...
+    /// </summary>
+    /// <param name="args"></param>
     private static void Main(string[] args)
     {
-        test();
-
-        //const double eccentricity = 0.3; // unitless eccentricity of an orbit
-        //Vector2 initialPosition = new Vector2(1 - eccentricity, 0);
-        //Vector2 initialMomentum = new Vector2(0, Math.Sqrt((1 + eccentricity) / (1 - eccentricity)));
-        //Integrator integrator = new Integrator(initialPosition, initialMomentum);
-        //integrator.integrate();
+        testDependencyOnStepsize();
     }
 
+
+    /// <summary>
+    /// This handler's only purpose is to write down position after one period
+    /// </summary>
     public class OutputHandlerForMethodOrderTesting : IOutputHandler
     {
         string outputFilename;
         public OutputHandlerForMethodOrderTesting(string outputFilename)
         {
             this.outputFilename = outputFilename;
+            outputString += "stepsize\tposX\tposY\n";
         }
 
-        public int order { set; get; }
         public double period { set; get; }
         bool afterAPeriod = false;
         public Queue<Vector2> positions = new Queue<Vector2>();
         public Queue<double> stepSizes = new Queue<double>();
+        public List<string> methods = new List<string>();
 
-        public void addStepsizeDatapoint(double stepSize)
-        {
-            stepSizes.Enqueue(stepSize);
+        public string outputString { set; get; } // dumb way of doing this in general but nobody expects more than ~20 datapoints anyway
+
+        /// <summary>
+        /// this is expected to run only once per method
+        /// </summary>
+        /// <param name="method"></param>
+        public void addMethodDatapoint(string method){
+            methods.Add(method);
+            outputString += method + "\n";
         }
 
-        Vector2 lastPosition;
-        public void addPositionDatapoint(Vector2 position)
-        {
+        /// <summary>
+        /// is expected to be run before position gets recorded
+        /// </summary>
+        /// <param name="stepSize"></param>
+        public void addStepsizeDatapoint(double stepSize){
+            stepSizes.Enqueue(stepSize);
+            outputString += stepSize + "\t";
+            afterAPeriod = false;
+        }
+
+        Vector2 lastPosition = new Vector2(0,0);
+        /// <summary>
+        /// is expected to run every timestep during the integration, but will only record once per simulation and after the period
+        /// </summary>
+        /// <param name="position"></param>
+        public void addPositionDatapoint(Vector2 position){
             if (afterAPeriod && positions.Count < stepSizes.Count)
             {
                 positions.Enqueue(lastPosition);
+
                 afterAPeriod = false;
+                outputString += position.X + "\t" + position.Y + "\n";
             }
             lastPosition = position;
         }
@@ -55,61 +79,47 @@ internal class Program
         /// it is expected youll call this after multiple runs with different dts
         /// </summary>
         /// <exception cref="Exception"></exception>
-        public void write()
-        {
-            if (positions.Count != stepSizes.Count)
-            {
-                throw new Exception("You have a diferent number of dts and positions recorded");
-            }
-
-            using (StreamWriter sw = new StreamWriter(outputFilename))
-            {
-                string toWrite = $"order {order}\ndt\tpositionX\tpositionY"; // header of the file; unitless (ew)
-                sw.WriteLine(toWrite);
-                while (stepSizes.Count > 0)
-                {
-                    toWrite = stepSizes.Dequeue() + "\t" + positions.Dequeue().ToString();
-                    sw.WriteLine(toWrite);
-                }
+        public void write(){
+            using (StreamWriter sw = new StreamWriter(outputFilename)){
+                sw.Write(outputString);
             }
         }
+
 
         public void addAngularMomentumDatapoint(double andgularMomentum) { }//not used lol
         public void addEnergyDatapoint(double energy) { }// not used lol
     }
 
-    public static void test()
-    {
-        double wholePeriod = 8.0 * Math.Atan(1.0);
-        const double eccentricity = 0.3; // unitless eccentricity of an orbit
-        Vector2 initialPosition = new Vector2(1 - eccentricity, 0);
-        Vector2 initialMomentum = new Vector2(0, Math.Sqrt((1 + eccentricity) / (1 - eccentricity)));
+    /// <summary>
+    /// Simulate using a chosen method for a bunch of stepsizes and record the positions after one orbit
+    /// </summary>
+    public static void testDependencyOnStepsize() {
 
-        string filename = "ordersOutputRK2.txt";
-        OutputHandlerForMethodOrderTesting handler = new OutputHandlerForMethodOrderTesting(filename);
-        handler.period = wholePeriod;
+        double[] stepSizes = new double[] { 1e-1, 5e-2, 1e-2, 5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5 };
+        string[] methods = new string[] { "Euler", "RK2", "RK4" };
+        const string filename = "stepsizeTestOutput.txt";
 
-        // create an array of smaller and smaller timesteps that still end up at exactly one period
-        const int numberOfDatapoints = 25;
-        double[] stepSizes = new double[numberOfDatapoints];
-        for (int i = 0; i < numberOfDatapoints; i++)
-        {
-            stepSizes[i] = wholePeriod / Math.Pow(2, i + 2);
-        }
-        Console.WriteLine("vscode is dumb and wont tell u but im running brm brm");
+        OutputHandlerForMethodOrderTesting stepsizeHandler = new OutputHandlerForMethodOrderTesting(filename);
 
-        foreach (double stepSize in stepSizes)
-        {
-            Console.WriteLine(stepSize);
-            handler.addStepsizeDatapoint(stepSize);
-            Integrator integrator = new Integrator(initialPosition, initialMomentum);
+        foreach (string method in methods){
+            stepsizeHandler.addMethodDatapoint(method);
+            Console.WriteLine($"Currently trying the {method} method");
+            foreach (double stepSize in stepSizes)
+            {
+                Console.WriteLine($"Currently running stepsize {stepSize}");
+                stepsizeHandler.addStepsizeDatapoint(stepSize);
+                // setup new simnulation
+                double wholePeriod = 8.0 * Math.Atan(1.0);
+                const double eccentricity = 0.3; // unitless eccentricity of an orbit
+                Vector2 initialPosition = new Vector2(1 - eccentricity, 0);
+                Vector2 initialMomentum = new Vector2(0, Math.Sqrt((1 + eccentricity) / (1 - eccentricity)));
+                Integrator integrator = new Integrator(initialPosition, initialMomentum);
 
-            double wholePeriodAndABit = wholePeriod + 1.5 * stepSize; // should make sure theres plenty of space to hit period + stepsize + epsilon so the handlers write condition hit, but also not too long to write down data from whole period + stepsize
-
-            integrator.integrate(handler, wholePeriodAndABit, stepSize, method: "RK2", write: false);
+                integrator.integrate(stepsizeHandler, wholePeriod + 5 * stepSize, stepSize, write: false, method: method);
+            }
         }
 
-        handler.write();
+        stepsizeHandler.write();
     }
 
 }

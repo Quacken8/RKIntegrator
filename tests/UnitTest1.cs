@@ -33,7 +33,7 @@ public class UnitTest1
         FileWriter handler = new FileWriter(outputFile);
 
         double timestep = 1e-5;
-        double finaltime = wholePeriod;
+        double finaltime = wholePeriod-20*timestep;
         integrator.integrate(handler, finaltime, timestep, method: "rk2");
     }
 
@@ -67,6 +67,10 @@ public class UnitTest1
 
         handler.write();
     }
+    [TestMethod]
+    public void TestAllOrders(){
+        
+    }
 }
 
 /// <summary>
@@ -88,7 +92,7 @@ public class OutputHandlerForMethodOrderTesting : IOutputHandler {
         stepSizes.Enqueue(stepSize);
     }
 
-    Vector2 lastPosition;
+    Vector2 lastPosition = new Vector2(0,0);
     public void addPositionDatapoint(Vector2 position){
         if (afterAPeriod && positions.Count < stepSizes.Count){
             positions.Enqueue(lastPosition);
