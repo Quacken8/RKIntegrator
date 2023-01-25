@@ -3,111 +3,34 @@
 
 internal class Program
 {
+
     /// <summary>
-    /// This main in particular is only useful for one special case: testing the order of the methods. Everything else was handled from the unit test 1. Yes, I *could* make this general purpose... I could...
+    /// only for this one test. I do it here becuase unit tests dont give real time output which is dumb but I need it 
     /// </summary>
     /// <param name="args"></param>
     private static void Main(string[] args)
     {
-        testDependencyOnStepsize();
+        TestStepsizeDependency();
     }
 
 
-    /// <summary>
-    /// This handler's only purpose is to write down position after one period
-    /// </summary>
-    public class OutputHandlerForMethodOrderTesting : IOutputHandler
+    public static void TestStepsizeDependency()
     {
-        string outputFilename;
-        public OutputHandlerForMethodOrderTesting(string outputFilename)
-        {
-            this.outputFilename = outputFilename;
-            outputString += "stepsize\tposX\tposY\n";
-        }
-
-        public double period { set; get; }
-        bool afterAPeriod = false;
-        public Queue<Vector2> positions = new Queue<Vector2>();
-        public Queue<double> stepSizes = new Queue<double>();
-        public List<string> methods = new List<string>();
-
-        public string outputString { set; get; } // dumb way of doing this in general but nobody expects more than ~20 datapoints anyway
-
-        /// <summary>
-        /// this is expected to run only once per method
-        /// </summary>
-        /// <param name="method"></param>
-        public void addMethodDatapoint(string method){
-            methods.Add(method);
-            outputString += method + "\n";
-        }
-
-        /// <summary>
-        /// is expected to be run before position gets recorded
-        /// </summary>
-        /// <param name="stepSize"></param>
-        public void addStepsizeDatapoint(double stepSize){
-            stepSizes.Enqueue(stepSize);
-            outputString += stepSize + "\t";
-            afterAPeriod = false;
-        }
-
-        Vector2 lastPosition = new Vector2(0,0);
-        /// <summary>
-        /// is expected to run every timestep during the integration, but will only record once per simulation and after the period
-        /// </summary>
-        /// <param name="position"></param>
-        public void addPositionDatapoint(Vector2 position){
-            if (afterAPeriod && positions.Count < stepSizes.Count)
-            {
-                positions.Enqueue(lastPosition);
-
-                afterAPeriod = false;
-                outputString += position.X + "\t" + position.Y + "\n";
-            }
-            lastPosition = position;
-        }
-        public void addTimeDatapoint(double time)
-        {
-            if (time > period)
-            {
-                afterAPeriod = true;
-            }
-        }
-
-        /// <summary>
-        /// it is expected youll call this after multiple runs with different dts
-        /// </summary>
-        /// <exception cref="Exception"></exception>
-        public void write(){
-            using (StreamWriter sw = new StreamWriter(outputFilename)){
-                sw.Write(outputString);
-            }
-        }
-
-
-        public void addAngularMomentumDatapoint(double andgularMomentum) { }//not used lol
-        public void addEnergyDatapoint(double energy) { }// not used lol
-    }
-
-    /// <summary>
-    /// Simulate using a chosen method for a bunch of stepsizes and record the positions after one orbit
-    /// </summary>
-    public static void testDependencyOnStepsize() {
 
         double[] stepSizes = new double[] { 1e-1, 5e-2, 1e-2, 5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5 };
         string[] methods = new string[] { "Euler", "RK2", "RK4" };
         const string filename = "stepsizeTestOutput.txt";
 
-        OutputHandlerForMethodOrderTesting stepsizeHandler = new OutputHandlerForMethodOrderTesting(filename);
+        OutputHandlerThatDoesNothing handler = new OutputHandlerThatDoesNothing();
+        string outputString = "";
 
-        foreach (string method in methods){
-            stepsizeHandler.addMethodDatapoint(method);
+        foreach (string method in methods)
+        {
+            outputString += "\n" + method + "\n";
             Console.WriteLine($"Currently trying the {method} method");
             foreach (double stepSize in stepSizes)
             {
                 Console.WriteLine($"Currently running stepsize {stepSize}");
-                stepsizeHandler.addStepsizeDatapoint(stepSize);
                 // setup new simnulation
                 double wholePeriod = 8.0 * Math.Atan(1.0);
                 const double eccentricity = 0.3; // unitless eccentricity of an orbit
@@ -115,16 +38,104 @@ internal class Program
                 Vector2 initialMomentum = new Vector2(0, Math.Sqrt((1 + eccentricity) / (1 - eccentricity)));
                 Integrator integrator = new Integrator(initialPosition, initialMomentum);
 
-                integrator.integrate(stepsizeHandler, wholePeriod + 5 * stepSize, stepSize, write: false, method: method);
+                outputString += integrator.integrate(handler, wholePeriod + 5 * stepSize, stepSize, write: false, method: method) + "\n";
             }
         }
 
-        stepsizeHandler.write();
+        using (StreamWriter sw = new StreamWriter(filename)){
+            sw.Write(outputString);
+        }
     }
-
 }
 
+/// <summary>
+/// This handler's only purpose is to write down position after one period
+/// </summary>
+public class OutputHandlerForMethodOrderTesting : IOutputHandler
+{
+    string outputFilename;
+    public OutputHandlerForMethodOrderTesting(string outputFilename)
+    {
+        this.outputFilename = outputFilename;
+        outputString += "stepsize\tposX\tposY\n";
+    }
 
+    public double period { set; get; }
+    bool afterAPeriod = false;
+    public Queue<Vector2> positions = new Queue<Vector2>();
+    public Queue<double> stepSizes = new Queue<double>();
+    public List<string> methods = new List<string>();
+
+    public string outputString { set; get; } // dumb way of doing this in general but nobody expects more than ~20 datapoints anyway
+
+    /// <summary>
+    /// this is expected to run only once per method
+    /// </summary>
+    /// <param name="method"></param>
+    public void addMethodDatapoint(string method)
+    {
+        methods.Add(method);
+        outputString += method + "\n";
+    }
+
+    /// <summary>
+    /// is expected to be run before position gets recorded
+    /// </summary>
+    /// <param name="stepSize"></param>
+    public void addStepsizeDatapoint(double stepSize)
+    {
+        stepSizes.Enqueue(stepSize);
+        outputString += stepSize + "\t";
+        afterAPeriod = false;
+    }
+
+    Vector2 lastPosition = new Vector2(0, 0);
+    /// <summary>
+    /// is expected to run every timestep during the integration, but will only record once per simulation and after the period
+    /// </summary>
+    /// <param name="position"></param>
+    public void addPositionDatapoint(Vector2 position)
+    {
+        if (afterAPeriod && positions.Count < stepSizes.Count)
+        {
+            positions.Enqueue(lastPosition);
+
+            afterAPeriod = false;
+            outputString += position.X + "\t" + position.Y + "\n";
+        }
+        lastPosition = position;
+    }
+    public void addTimeDatapoint(double time)
+    {
+        if (time > period)
+        {
+            afterAPeriod = true;
+        }
+    }
+
+    /// <summary>
+    /// it is expected youll call this after multiple runs with different dts
+    /// </summary>
+    public void write()
+    {
+        using (StreamWriter sw = new StreamWriter(outputFilename))
+        {
+            sw.Write(outputString);
+        }
+    }
+
+
+    public void addAngularMomentumDatapoint(double andgularMomentum) { }//not used lol
+    public void addEnergyDatapoint(double energy) { }// not used lol
+}
+
+public class OutputHandlerThatDoesNothing : IOutputHandler{
+    public void write() { }
+    public void addAngularMomentumDatapoint(double x) {}
+    public void addEnergyDatapoint(double x) {}
+    public void addPositionDatapoint(Vector2 x) {}
+    public void addTimeDatapoint(double x) {}
+}
 
 public interface IOutputHandler{
 
@@ -152,7 +163,7 @@ public class Integrator{
     /// <param name="timeStep">timestep of the simulation</param>
     /// <param name="method">method with which to integrate. Viable options are "euler", "RK2" and "RK4" (not case sensitive)</param>
     /// <exception cref="ArgumentException">thrown if you dont choose viable method for integration</exception>
-    public void integrate(IOutputHandler outputHandler, double finalTime, double timeStep, string method = "RK2", bool write = true){
+    public string integrate(IOutputHandler outputHandler, double finalTime, double timeStep, string method = "RK2", bool write = true){
 
         AssortedFunctions af = new AssortedFunctions();
 
@@ -163,34 +174,56 @@ public class Integrator{
 
         Particle earth = new Particle(initialPosition, initialMomentum);
 
-        while (t < finalTime){
+        switch (method.ToUpper())
+        {
+            case ("RK2"):
+                while (t < finalTime)
+                {
+                    outputHandler.addTimeDatapoint(t);
+                    outputHandler.addEnergyDatapoint(earth.Energy);
+                    outputHandler.addAngularMomentumDatapoint(earth.AngularMomentum);
+                    outputHandler.addPositionDatapoint(earth.Position);
 
-            outputHandler.addTimeDatapoint(t);
-            outputHandler.addEnergyDatapoint(earth.Energy);
-            outputHandler.addAngularMomentumDatapoint(earth.AngularMomentum);
-            outputHandler.addPositionDatapoint(earth.Position);
-
-            //step forward using chosen method
-            switch(method.ToUpper()){
-                case ("RK2"): 
                     earth.updateRK2(timeStep, af.dxdt, af.dpdt);
-                    break;
-                case ("RK4"):
-                    earth.updateRK4(timeStep, af.dxdt, af.dpdt);
-                    break;
-                case ("EULER"):
-                    earth.updateEuler(timeStep, af.dxdt, af.dpdt);
-                    break;
-                default:
-                    throw new ArgumentException($"Method {method} not found! Only acceptable methods are 'RK2', 'RK4' and 'Euler'.");
-            }
 
-            t += timeStep;
+                    t += timeStep;
+                }
+                break;
+            case ("RK4"):
+                while (t < finalTime)
+                {
+                    outputHandler.addTimeDatapoint(t);
+                    outputHandler.addEnergyDatapoint(earth.Energy);
+                    outputHandler.addAngularMomentumDatapoint(earth.AngularMomentum);
+                    outputHandler.addPositionDatapoint(earth.Position);
+
+                    earth.updateRK4(timeStep, af.dxdt, af.dpdt);
+
+                    t += timeStep;
+                }
+                break;
+            case ("EULER"):
+                while (t < finalTime)
+                {
+                    outputHandler.addTimeDatapoint(t);
+                    outputHandler.addEnergyDatapoint(earth.Energy);
+                    outputHandler.addAngularMomentumDatapoint(earth.AngularMomentum);
+                    outputHandler.addPositionDatapoint(earth.Position);
+
+                    earth.updateEuler(timeStep, af.dxdt, af.dpdt);
+
+                    t += timeStep;
+                }
+                break;
+            default:
+                throw new ArgumentException($"Method {method} not found! Only acceptable methods are 'RK2', 'RK4' and 'Euler'.");
         }
 
         if (write){
             outputHandler.write();
         }
+
+        return $"{t}\t{timeStep}\t{earth.Position.ToString()}";
     }
 }
 
