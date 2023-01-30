@@ -32,13 +32,13 @@ public class UnitTest1
         string outputFile = "output.txt";
         FileWriter handler = new FileWriter(outputFile);
 
-        double timestep = 0.3;
+        double timestep = 1e-4;
         double finaltime = wholePeriod+2*timestep;
-        integrator.integrate(handler, finaltime, timestep, method: "rk4");
+        integrator.integrate(handler, finaltime, timestep, method: "euler");
     }
 
     [TestMethod]
-    public void TestStepsizeDependency(){
+    public void TestStepsizeDependency(){ // not advised to use becuase for some reason vscode's unit tests dont show console output until the end of the test so you dont see what part of the simulation you are at and since these take a lot of time it's rather impractical; use the TestStepsizeDependency() function in main instead
 
         double[] stepSizes = new double[] { 1e-1, 5e-2, 1e-2, 5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9 };
         string[] methods = new string[] { "Euler", "RK2", "RK4" };

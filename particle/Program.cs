@@ -48,94 +48,6 @@ internal class Program
     }
 }
 
-/// <summary>
-/// This handler's only purpose is to write down position after one period
-/// </summary>
-public class OutputHandlerForMethodOrderTesting : IOutputHandler
-{
-    string outputFilename;
-    public OutputHandlerForMethodOrderTesting(string outputFilename)
-    {
-        this.outputFilename = outputFilename;
-        outputString += "stepsize\tposX\tposY\n";
-    }
-
-    public double period { set; get; }
-    bool afterAPeriod = false;
-    public Queue<Vector2> positions = new Queue<Vector2>();
-    public Queue<double> stepSizes = new Queue<double>();
-    public List<string> methods = new List<string>();
-
-    public string outputString { set; get; } // dumb way of doing this in general but nobody expects more than ~20 datapoints anyway
-
-    /// <summary>
-    /// this is expected to run only once per method
-    /// </summary>
-    /// <param name="method"></param>
-    public void addMethodDatapoint(string method)
-    {
-        methods.Add(method);
-        outputString += method + "\n";
-    }
-
-    /// <summary>
-    /// is expected to be run before position gets recorded
-    /// </summary>
-    /// <param name="stepSize"></param>
-    public void addStepsizeDatapoint(double stepSize)
-    {
-        stepSizes.Enqueue(stepSize);
-        outputString += stepSize + "\t";
-        afterAPeriod = false;
-    }
-
-    Vector2 lastPosition = new Vector2(0, 0);
-    /// <summary>
-    /// is expected to run every timestep during the integration, but will only record once per simulation and after the period
-    /// </summary>
-    /// <param name="position"></param>
-    public void addPositionDatapoint(Vector2 position)
-    {
-        if (afterAPeriod && positions.Count < stepSizes.Count)
-        {
-            positions.Enqueue(lastPosition);
-
-            afterAPeriod = false;
-            outputString += position.X + "\t" + position.Y + "\n";
-        }
-        lastPosition = position;
-    }
-    public void addTimeDatapoint(double time)
-    {
-        if (time > period)
-        {
-            afterAPeriod = true;
-        }
-    }
-
-    /// <summary>
-    /// it is expected youll call this after multiple runs with different dts
-    /// </summary>
-    public void write()
-    {
-        using (StreamWriter sw = new StreamWriter(outputFilename))
-        {
-            sw.Write(outputString);
-        }
-    }
-
-
-    public void addAngularMomentumDatapoint(double andgularMomentum) { }//not used lol
-    public void addEnergyDatapoint(double energy) { }// not used lol
-}
-
-public class OutputHandlerThatDoesNothing : IOutputHandler{
-    public void write() { }
-    public void addAngularMomentumDatapoint(double x) {}
-    public void addEnergyDatapoint(double x) {}
-    public void addPositionDatapoint(Vector2 x) {}
-    public void addTimeDatapoint(double x) {}
-}
 
 public interface IOutputHandler{
 
@@ -146,6 +58,14 @@ public interface IOutputHandler{
     public void write();
 }
 
+public class OutputHandlerThatDoesNothing : IOutputHandler
+{
+    public void write() { }
+    public void addAngularMomentumDatapoint(double x) { }
+    public void addEnergyDatapoint(double x) { }
+    public void addPositionDatapoint(Vector2 x) { }
+    public void addTimeDatapoint(double x) { }
+}
 
 public class Integrator{
     Vector2 initialPosition;
@@ -272,13 +192,13 @@ public class Particle{
     /// <returns></returns>
     public void updateRK2(double stepSize, Func<Vector2, Vector2> dxdt, Func<Vector2, Vector2> dpdt){
 
+        Vector2 lastPosition = this.Position;
         Vector2 lastMomentum = this.Momentum;
         Vector2 k1 = dxdt(lastMomentum);
         Vector2 k2 = dxdt(lastMomentum + stepSize * k1);
 
         this.Position = this.Position + stepSize * 0.5 * (k1 + k2);
 
-        Vector2 lastPosition = this.Position;
         Vector2 l1 = dpdt(lastPosition);
         Vector2 l2 = dpdt(lastPosition + stepSize * l1);
         this.Momentum = this.Momentum + stepSize * 0.5 * (l1 + l2);
@@ -294,6 +214,8 @@ public class Particle{
     public void updateRK4(double stepSize, Func<Vector2, Vector2> dxdt, Func<Vector2, Vector2> dpdt){
 
         Vector2 lastMomentum = this.Momentum;
+        Vector2 lastPosition = this.Position;
+
         Vector2 k1 = dxdt(lastMomentum);
         Vector2 k2 = dxdt(lastMomentum + 0.5 * stepSize * k1);
         Vector2 k3 = dxdt(lastMomentum + 0.5 * stepSize * k2);
@@ -301,8 +223,6 @@ public class Particle{
 
         this.Position = this.Position + stepSize / 6 * (k1 + 2 * k2 + 2 * k3 + k4);
 
-
-        Vector2 lastPosition = this.Position;
         Vector2 l1 = dpdt(lastPosition);
         Vector2 l2 = dpdt(lastPosition + 0.5 * stepSize * l1);
         Vector2 l3 = dpdt(lastPosition + 0.5 * stepSize * l2);
