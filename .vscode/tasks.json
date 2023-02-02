@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/particle/particle.csproj",
+                "${workspaceFolder}/Simul1.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -19,7 +19,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/particle/particle.csproj",
+                "${workspaceFolder}/Simul1.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -33,7 +33,7 @@
                 "watch",
                 "run",
                 "--project",
-                "${workspaceFolder}/particle/particle.csproj"
+                "${workspaceFolder}/Simul1.csproj"
             ],
             "problemMatcher": "$msCompile"
         }
